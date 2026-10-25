@@ -1,3 +1,9 @@
+# noinspection SpringBootApplicationYaml
+app:
+  jwt:
+    secret: ${JWT_SECRET:local-dev-secret-change-me-at-least-32-chars-long}
+    expiration-minutes: 60
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/hookflow
@@ -22,3 +28,4 @@ management:
     web:
       exposure:
         include: health,info
+
