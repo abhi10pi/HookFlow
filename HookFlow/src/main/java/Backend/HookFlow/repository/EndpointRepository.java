@@ -12,4 +12,5 @@ public interface EndpointRepository extends JpaRepository<Endpoint, Long> {
     Page<Endpoint> findByTenantId(Long tenantId, Pageable pageable);
     List<Endpoint> findByTenantIdAndActiveTrue(Long tenantId);
     Optional<Endpoint> findByIdAndTenantId(Long id, Long tenantId);
+    long countByTenantIdAndActiveTrue(Long tenantId);
 }
