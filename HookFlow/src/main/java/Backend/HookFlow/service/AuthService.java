@@ -15,10 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import Backend.HookFlow.common.HashUtil;
 import java.security.SecureRandom;
 import java.util.HexFormat;
 
@@ -45,7 +42,8 @@ public class AuthService {
 
         Tenant tenant = new Tenant();
         tenant.setName(req.tenantName().trim());
-        tenant.setApiKeyHash(sha256(apiKey));
+        // tenant.setApiKeyHash(sha256(apiKey));
+        tenant.setApiKeyHash(HashUtil.sha256(apiKey));
         tenantRepository.save(tenant);
 
         User user = new User();
@@ -73,12 +71,4 @@ public class AuthService {
         return "hr_" + HexFormat.of().formatHex(bytes);
     }
 
-    static String sha256(String value) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            return HexFormat.of().formatHex(md.digest(value.getBytes(StandardCharsets.UTF_8)));
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException(e);
-        }
-    }
 }

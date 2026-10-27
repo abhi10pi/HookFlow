@@ -1,9 +1,11 @@
 package Backend.HookFlow.config;
 
+import Backend.HookFlow.security.ApiKeyFilter;
 import Backend.HookFlow.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -21,6 +23,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
+    private final ApiKeyFilter apiKeyFilter;
     private final CorsConfigurationSource corsConfigurationSource;
 
     @Bean
@@ -32,9 +35,11 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/auth/**", "/actuator/health",
                                  "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/events").hasRole("API_CLIENT")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e.authenticationEntryPoint(
                     new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+            .addFilterBefore(apiKeyFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
