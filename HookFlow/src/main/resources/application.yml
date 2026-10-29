@@ -23,6 +23,14 @@ spring:
     port: 5672
     username: guest
     password: guest
+    connection-timeout: 5s
+    publisher-confirm-type: correlated
+    listener:
+      simple:
+        concurrency: 2
+        max-concurrency: 5
+        prefetch: 10
+        default-requeue-rejected: false
 
 management:
   endpoints:

@@ -3,10 +3,12 @@ package Backend.HookFlow.service;
 import Backend.HookFlow.entity.Delivery;
 import Backend.HookFlow.entity.Endpoint;
 import Backend.HookFlow.entity.Event;
+import Backend.HookFlow.messaging.DeliveriesCreatedEvent;
 import Backend.HookFlow.repository.DeliveryRepository;
 import Backend.HookFlow.repository.EndpointRepository;
 import Backend.HookFlow.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ public class EventWriter {
     private final EventRepository eventRepository;
     private final EndpointRepository endpointRepository;
     private final DeliveryRepository deliveryRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     /** Saves the event and one PENDING delivery per active endpoint, all in ONE transaction. */
     @Transactional
@@ -31,20 +34,26 @@ public class EventWriter {
         event.setType(type);
         event.setPayload(payloadJson);
         event.setIdempotencyKey(idempotencyKey);
-        eventRepository.saveAndFlush(event);   // flush now so a duplicate key fails right here
+        eventRepository.saveAndFlush(event);
 
         List<Delivery> deliveries = endpointRepository.findByTenantIdAndActiveTrue(tenantId).stream()
                 .map(endpoint -> newDelivery(event, endpoint))
                 .toList();
-        deliveryRepository.saveAll(deliveries);
+        List<Delivery> saved = deliveryRepository.saveAll(deliveries);
 
-        return new SavedEvent(event, deliveries.size());
+        if (!saved.isEmpty()) {
+            List<Long> ids = saved.stream().map(Delivery::getId).toList();
+            // Handled by DeliveryPublisher, but ONLY after this transaction commits.
+            eventPublisher.publishEvent(new DeliveriesCreatedEvent(ids));
+        }
+
+        return new SavedEvent(event, saved.size());
     }
 
     private static Delivery newDelivery(Event event, Endpoint endpoint) {
         Delivery delivery = new Delivery();
         delivery.setEventId(event.getId());
         delivery.setEndpointId(endpoint.getId());
-        return delivery;   // status defaults to PENDING, attemptCount to 0
+        return delivery;
     }
 }
