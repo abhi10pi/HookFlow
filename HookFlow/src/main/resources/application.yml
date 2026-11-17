@@ -5,6 +5,15 @@ app:
     expiration-minutes: 60
   webhook:
     allow-private-addresses: ${WEBHOOK_ALLOW_PRIVATE_ADDRESSES:true}
+  delivery:
+    retry:
+      delays: 10s,1m,10m,1h,6h
+      jitter: 0.2
+  scheduler:
+    poll-ms: 1000
+    reconcile-ms: 60000
+    stranded-after: 2m    
+    
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/hookflow
@@ -31,7 +40,7 @@ spring:
         max-concurrency: 5
         prefetch: 10
         default-requeue-rejected: false
-
+  
 management:
   endpoints:
     web:

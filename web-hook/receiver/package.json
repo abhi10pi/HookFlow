@@ -1,0 +1,12 @@
+{
+  "name": "hookflow-receiver",
+  "version": "1.0.0",
+  "description": "Fake webhook receiver for HookFlow testing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
