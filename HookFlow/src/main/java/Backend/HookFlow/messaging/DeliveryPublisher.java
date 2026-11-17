@@ -28,20 +28,26 @@ public class DeliveryPublisher {
         });
     }
 
+    /** New deliveries: publish after the transaction that created them has committed. */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onDeliveriesCreated(DeliveriesCreatedEvent event) {
         for (Long deliveryId : event.deliveryIds()) {
-            String message = String.valueOf(deliveryId);
             try {
-                rabbitTemplate.convertAndSend(
-                        RabbitConfig.EXCHANGE,
-                        RabbitConfig.ROUTING_KEY,
-                        message,
-                        new CorrelationData(message));
+                publish(deliveryId);
             } catch (AmqpException e) {
-                // The event and its deliveries are already committed. Do not fail the sender's request.
-                log.error("Could not publish delivery {} (it stays PENDING)", deliveryId, e);
+                // Already committed. Do not fail the sender. The reconciler will publish it later.
+                log.error("Could not publish delivery {} (the reconciler will recover it)", deliveryId, e);
             }
         }
+    }
+
+    /** Publishes one delivery id. Throws AmqpException if the broker cannot be reached. */
+    public void publish(long deliveryId) {
+        String message = String.valueOf(deliveryId);
+        rabbitTemplate.convertAndSend(
+                RabbitConfig.EXCHANGE,
+                RabbitConfig.ROUTING_KEY,
+                message,
+                new CorrelationData(message));
     }
 }

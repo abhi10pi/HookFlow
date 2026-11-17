@@ -13,7 +13,7 @@ app:
     poll-ms: 1000
     reconcile-ms: 60000
     stranded-after: 2m    
-    
+      
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/hookflow
